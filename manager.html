@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="script_management">脚本管理 - JS注入器</title>
+  <style>
+    :root {
+      --primary-color: #4285f4;
+      --primary-hover: #3b78e7;
+      --primary-active: #3367d6;
+      --danger-color: #ea4335;
+      --success-color: #34a853;
+      --warning-color: #fbbc05;
+      --text-color: #202124;
+      --secondary-text: #5f6368;
+      --border-color: #dadce0;
+      --background-light: #f8f9fa;
+      --background-white: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1);
+      --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15);
+      --border-radius: 8px;
+      --transition: all 0.2s ease;
+    }
+    
+    /* 暗黑模式变量 */
+    [data-theme="dark"] {
+      --primary-color: #8ab4f8;
+      --primary-hover: #aecbfa;
+      --primary-active: #669df6;
+      --danger-color: #f28b82;
+      --success-color: #81c995;
+      --warning-color: #fdd663;
+      --text-color: #e8eaed;
+      --secondary-text: #9aa0a6;
+      --border-color: #3c4043;
+      --background-light: #202124;
+      --background-white: #292a2d;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      margin: 0;
+      padding: 20px;
+      color: var(--text-color);
+      background-color: var(--background-white);
+      transition: background-color 0.3s ease, color 0.3s ease;
+      max-width: 1000px;
+      margin: 0 auto;
+    }
+    h1 {
+      margin-bottom: 20px;
+    }
+    .toolbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+    }
+    th, td {
+      padding: 10px;
+      text-align: left;
+      border-bottom: 1px solid var(--border-color);
+    }
+    th {
+      background-color: var(--background-light);
+    }
+    tr:hover {
+      background-color: var(--background-light);
+    }
+    .actions {
+      display: flex;
+      gap: 5px;
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    button.small {
+      padding: 5px 10px;
+      font-size: 12px;
+    }
+    button.danger {
+      background-color: #ea4335;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .empty-state {
+      text-align: center;
+      padding: 40px;
+      background-color: var(--background-light);
+      border-radius: 8px;
+      border: 1px solid var(--border-color);
+      color: var(--text-color);
+    }
+    .search-box {
+      padding: 8px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+      width: 250px;
+      background-color: var(--background-white);
+      color: var(--text-color);
+    }
+    .error-message {
+      background-color: var(--danger-color);
+      color: white;
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 15px;
+      border-left: 4px solid #d32f2f;
+      opacity: 1;
+      transition: opacity 0.5s ease;
+    }
+    
+    /* 语言切换按钮 */
+    .lang-toggle {
+      margin-left: 10px;
+      font-size: 14px;
+      cursor: pointer;
+      background: none;
+      border: none;
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      padding: 5px 10px;
+      border-radius: 4px;
+      transition: background-color 0.2s;
+    }
+    
+    .lang-toggle:hover {
+      background-color: var(--background-light);
+    }
+  </style>
+</head>
+<body>
+  <h1 data-i18n="script_management">脚本管理</h1>
+  
+  <div class="toolbar">
+    <button id="add-new" data-i18n="add_new_script">添加新脚本</button>
+    <input type="text" id="search" class="search-box" data-i18n-placeholder="search_scripts" placeholder="搜索脚本...">
+  </div>
+  
+  <table id="scripts-table">
+    <thead>
+      <tr>
+        <th data-i18n="name">名称</th>
+        <th data-i18n="domain">域名</th>
+        <th data-i18n="created_at">创建时间</th>
+        <th data-i18n="updated_at">更新时间</th>
+        <th data-i18n="actions">操作</th>
+      </tr>
+    </thead>
+    <tbody id="scripts-list">
+      <!-- 脚本列表将通过JavaScript动态生成 -->
+    </tbody>
+  </table>
+  
+  <div id="empty-state" class="empty-state" style="display: none;">
+    <h3 data-i18n="no_scripts_found">没有找到脚本</h3>
+    <p data-i18n="click_add_new_script">点击"添加新脚本"按钮创建一个新脚本</p>
+  </div>
+  
+  <script type="module" src="manager.js"></script>
+</body>
+</html> 

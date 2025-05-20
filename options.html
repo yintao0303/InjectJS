@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="options">选项 - JS注入器</title>
+  <style>
+    :root {
+      --primary-color: #4285f4;
+      --primary-hover: #3b78e7;
+      --primary-active: #3367d6;
+      --danger-color: #ea4335;
+      --success-color: #34a853;
+      --warning-color: #fbbc05;
+      --text-color: #202124;
+      --secondary-text: #5f6368;
+      --border-color: #dadce0;
+      --background-light: #f8f9fa;
+      --background-white: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1);
+      --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15);
+      --border-radius: 8px;
+      --transition: all 0.2s ease;
+    }
+    
+    /* 暗黑模式变量 */
+    [data-theme="dark"] {
+      --primary-color: #8ab4f8;
+      --primary-hover: #aecbfa;
+      --primary-active: #669df6;
+      --danger-color: #f28b82;
+      --success-color: #81c995;
+      --warning-color: #fdd663;
+      --text-color: #e8eaed;
+      --secondary-text: #9aa0a6;
+      --border-color: #3c4043;
+      --background-light: #202124;
+      --background-white: #292a2d;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    
+    body {
+      font-family: Arial, sans-serif;
+      margin: 0;
+      padding: 20px;
+      max-width: 800px;
+      margin: 0 auto;
+      color: var(--text-color);
+      background-color: var(--background-white);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    h1 {
+      margin-bottom: 20px;
+      color: var(--primary-color);
+    }
+    .option-group {
+      margin-bottom: 20px;
+      padding: 15px;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      background-color: var(--background-light);
+    }
+    h2 {
+      margin-top: 0;
+      color: var(--text-color);
+    }
+    button {
+      padding: 8px 16px;
+      background-color: #4285f4;
+      color: white;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+      margin-right: 10px;
+    }
+    button.danger {
+      background-color: #ea4335;
+    }
+    button:hover {
+      opacity: 0.9;
+    }
+    .button-group {
+      margin-top: 10px;
+    }
+    textarea {
+      width: 100%;
+      height: 200px;
+      font-family: monospace;
+      margin-top: 10px;
+      margin-bottom: 10px;
+      padding: 8px;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+    }
+    /* 消息样式 */
+    .message {
+      padding: 10px;
+      border-radius: 4px;
+      margin-bottom: 10px;
+      text-align: center;
+      color: white;
+      animation: fadeIn 0.3s ease;
+      position: fixed;
+      top: 20px;
+      left: 50%;
+      transform: translateX(-50%);
+      z-index: 1000;
+      box-shadow: var(--shadow-sm);
+    }
+    .message.success {
+      background-color: #d4edda;
+      color: #155724;
+      border-left: 4px solid #28a745;
+    }
+    .message.error {
+      background-color: #f8d7da;
+      color: #721c24;
+      border-left: 4px solid #dc3545;
+    }
+    .author {
+      margin-top: 10px;
+      font-style: italic;
+      color: #666;
+    }
+    .option-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 10px 0;
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .option-description {
+      margin-top: 5px;
+      font-size: 12px;
+      color: var(--secondary-text);
+    }
+    
+    .theme-options {
+      margin-top: 12px;
+    }
+    
+    .switch-container {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+    
+    /* 开关样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 46px;
+      height: 24px;
+      margin-left: 8px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: var(--border-color);
+      transition: .4s;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 18px;
+      width: 18px;
+      left: 3px;
+      bottom: 3px;
+      background-color: white;
+      transition: .4s;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--primary-color);
+    }
+    
+    input:focus + .slider {
+      box-shadow: 0 0 1px var(--primary-color);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(18px);
+    }
+    
+    .slider.round {
+      border-radius: 34px;
+    }
+    
+    .slider.round:before {
+      border-radius: 50%;
+    }
+    
+    /* 语言选择器 */
+    .language-selector {
+      margin-top: 12px;
+    }
+    
+    select {
+      padding: 6px 12px;
+      background-color: var(--background-white);
+      color: var(--text-color);
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      font-size: 14px;
+      width: 200px;
+      outline: none;
+    }
+    
+    select:focus {
+      border-color: var(--primary-color);
+    }
+  </style>
+</head>
+<body>
+  <h1 data-i18n="options">选项</h1>
+  
+  <div class="option-group">
+    <h2 data-i18n="data_management">数据管理</h2>
+    <p data-i18n="import_data_description">您可以导出所有脚本数据进行备份，或者导入之前备份的数据。</p>
+    <div class="button-group">
+      <button id="export-data" data-i18n="export_data">导出数据</button>
+      <button id="import-data" data-i18n="import_data">导入数据</button>
+    </div>
+    <input type="file" id="import-file" style="display: none;" accept=".json">
+  </div>
+  
+  <div class="option-group">
+    <h2 data-i18n="appearance_settings">外观设置</h2>
+    <p data-i18n="appearance_description">您可以自定义扩展的显示主题和外观选项。</p>
+    <div class="theme-options">
+      <div class="option-row">
+        <label>
+          <span data-i18n="dark_mode">暗黑模式</span>
+          <div class="switch-container">
+            <span id="theme-status" data-i18n="off">关闭</span>
+            <label class="switch">
+              <input type="checkbox" id="theme-toggle">
+              <span class="slider round"></span>
+            </label>
+          </div>
+        </label>
+      </div>
+      <p class="option-description" data-i18n="dark_mode_description">启用暗黑模式将改变扩展界面的颜色方案，适合在暗光环境下使用。</p>
+    </div>
+  </div>
+  
+  <div class="option-group">
+    <h2 data-i18n="language_settings">语言设置</h2>
+    <p data-i18n="language_description">选择扩展界面的显示语言。</p>
+    <div class="language-selector">
+      <div class="option-row">
+        <label>
+          <span data-i18n="language">语言</span>
+          <select id="language-select">
+            <option value="auto" data-i18n="language_auto">自动（跟随浏览器）</option>
+            <option value="zh" data-i18n="language_zh">中文</option>
+            <option value="en" data-i18n="language_en">English</option>
+          </select>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div class="option-group">
+    <h2 data-i18n="advanced_settings">高级设置</h2>
+    <p data-i18n="advanced_description">您可以使用以下选项重置或清除所有数据。</p>
+    <div class="button-group">
+      <button id="clear-data" class="danger" data-i18n="clear_all_scripts">清除所有脚本</button>
+    </div>
+  </div>
+  
+  <div class="option-group">
+    <h2 data-i18n="about">关于</h2>
+    <p>JS注入器 v1.0</p>
+    <p data-i18n="about_description">一个允许您在任意网站注入自定义JavaScript代码的浏览器扩展。</p>
+    <p data-i18n="multiple_injection_support">支持多种注入方式，兼容各种CSP限制的网站。</p>
+    <div class="author">
+      <p><span data-i18n="author">作者</span>: Todd</p>
+      <p>© 2023 Todd. <span data-i18n="all_rights_reserved">保留所有权利。</span></p>
+    </div>
+  </div>
+  
+  <script type="module" src="options.js"></script>
+</body>
+</html> 

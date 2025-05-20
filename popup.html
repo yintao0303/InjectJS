@@ -1,0 +1,773 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title data-i18n="extension_name">JS注入器</title>
+  <!-- 引入CodeMirror -->
+  <link rel="stylesheet" href="lib/codemirror/codemirror.min.css">
+  <link rel="stylesheet" href="lib/codemirror/monokai.min.css">
+  <script src="lib/codemirror/codemirror.min.js"></script>
+  <script src="lib/codemirror/javascript.min.js"></script>
+  <script src="lib/codemirror/matchbrackets.min.js"></script>
+  <script src="lib/codemirror/closebrackets.min.js"></script>
+  <script src="lib/codemirror/show-hint.min.js"></script>
+  <script src="lib/codemirror/javascript-hint.min.js"></script>
+  <link rel="stylesheet" href="lib/codemirror/show-hint.min.css">
+  <style>
+    :root {
+      --primary-color: #4285f4;
+      --primary-hover: #3b78e7;
+      --primary-active: #3367d6;
+      --danger-color: #ea4335;
+      --success-color: #34a853;
+      --warning-color: #fbbc05;
+      --text-color: #202124;
+      --secondary-text: #5f6368;
+      --border-color: #dadce0;
+      --background-light: #f8f9fa;
+      --background-white: #ffffff;
+      --shadow-sm: 0 1px 2px rgba(60, 64, 67, 0.1);
+      --shadow-md: 0 2px 6px rgba(60, 64, 67, 0.15);
+      --border-radius: 8px;
+      --transition: all 0.2s ease;
+    }
+    
+    /* 暗黑模式变量 */
+    [data-theme="dark"] {
+      --primary-color: #8ab4f8;
+      --primary-hover: #aecbfa;
+      --primary-active: #669df6;
+      --danger-color: #f28b82;
+      --success-color: #81c995;
+      --warning-color: #fdd663;
+      --text-color: #e8eaed;
+      --secondary-text: #9aa0a6;
+      --border-color: #3c4043;
+      --background-light: #202124;
+      --background-white: #292a2d;
+      --shadow-sm: 0 1px 2px rgba(0, 0, 0, 0.3);
+      --shadow-md: 0 2px 6px rgba(0, 0, 0, 0.4);
+    }
+    
+    [data-theme="dark"] .primary-action {
+      background-color: #34a853;
+    }
+    
+    [data-theme="dark"] .primary-action:hover {
+      background-color: #2d9348;
+    }
+    
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+    }
+    
+    body {
+      width: 400px;
+      max-height: 600px;
+      padding: 12px;
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+      color: var(--text-color);
+      background-color: var(--background-white);
+      transition: background-color 0.3s ease, color 0.3s ease;
+    }
+    
+    h1 {
+      font-size: 18px;
+      font-weight: 600;
+      margin-bottom: 12px;
+      color: var(--text-color);
+      text-align: center;
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 1;
+    }
+    
+    h1 img {
+      vertical-align: middle;
+      margin-right: 8px;
+      width: 22px;
+      height: 22px;
+    }
+    
+    /* 语言切换按钮 */
+    .lang-toggle {
+      position: absolute;
+      right: 10px;
+      top: 0;
+      font-size: 14px;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 2px 8px;
+      height: 26px;
+      border-radius: 4px;
+      color: var(--text-color);
+      background-color: var(--background-light);
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+    }
+    
+    .lang-toggle:hover {
+      background-color: var(--primary-color);
+      color: white;
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .lang-toggle:active {
+      transform: translateY(0);
+    }
+    
+    .site-header {
+      margin-bottom: 10px;
+      padding: 6px 10px;
+      background-color: var(--background-light);
+      border-radius: var(--border-radius);
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      transition: var(--transition);
+    }
+    
+    .site-header-row {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 3px;
+    }
+    
+    .site-info {
+      display: flex;
+      flex-direction: column;
+      gap: 0;
+    }
+    
+    .domain-container {
+      display: flex;
+      align-items: center;
+      background-color: var(--background-white);
+      border-radius: 4px;
+      border: 1px solid var(--border-color);
+      overflow: hidden;
+      margin-bottom: 3px;
+      height: 24px;
+    }
+    
+    h2 {
+      margin: 0;
+      font-size: 13px;
+      font-weight: 500;
+      color: var(--text-color);
+    }
+    
+    #current-domain {
+      flex: 1;
+      font-weight: 500;
+      font-size: 12px;
+      word-break: break-all;
+      color: var(--text-color);
+      padding: 3px 8px;
+      display: block;
+    }
+    
+    .status-row {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      padding: 0;
+    }
+    
+    .toggle-label {
+      font-size: 11px;
+      color: var(--secondary-text);
+      display: flex;
+      align-items: center;
+      gap: 2px;
+    }
+    
+    .toggle-label::before {
+      content: "⚡";
+      font-size: 10px;
+      opacity: 0.7;
+    }
+    
+    #script-status {
+      color: var(--secondary-text);
+      font-size: 11px;
+      display: flex;
+      align-items: center;
+      gap: 4px;
+      padding: 3px 6px;
+      border-left: 1px solid var(--border-color);
+      background-color: var(--background-light);
+    }
+    
+    .status-indicator {
+      display: inline-block;
+      width: 7px;
+      height: 7px;
+      border-radius: 50%;
+      background-color: var(--border-color);
+    }
+    
+    .status-active .status-indicator {
+      background-color: var(--success-color);
+    }
+    
+    .status-inactive .status-indicator {
+      background-color: var(--warning-color);
+    }
+    
+    .status-active {
+      color: var(--success-color) !important;
+    }
+    
+    .status-inactive {
+      color: var(--warning-color) !important;
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 4px;
+    }
+    
+    .icon-button {
+      width: 28px;
+      height: 28px;
+      padding: 0;
+      border-radius: 50%;
+      background-color: var(--background-white);
+      color: var(--text-color);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      border: 1px solid var(--border-color);
+      cursor: pointer;
+      font-size: 14px;
+      transition: var(--transition);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .icon-button:hover {
+      background-color: var(--background-light);
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+      color: var(--primary-color);
+      border-color: var(--primary-color);
+    }
+    
+    .icon-button:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .icon-button:disabled {
+      background-color: var(--background-light);
+      color: var(--secondary-text);
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .small-icon {
+      width: 24px;
+      height: 24px;
+      font-size: 13px;
+      opacity: 0.8;
+      background-color: transparent;
+      border: none;
+      box-shadow: none;
+    }
+    
+    .small-icon:hover {
+      opacity: 1;
+      background-color: var(--background-light);
+      transform: none;
+      box-shadow: none;
+      color: var(--primary-color);
+    }
+    
+    .code-container {
+      margin-bottom: 6px;
+      border: 1px solid var(--border-color);
+      border-radius: var(--border-radius);
+      display: flex;
+      max-height: 340px;
+      flex-direction: column;
+      overflow: hidden;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .code-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      padding: 6px 10px;
+      background-color: var(--background-light);
+      border-bottom: 1px solid var(--border-color);
+    }
+    
+    .code-title-container {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+    }
+    
+    .code-title {
+      font-size: 12px;
+      font-weight: 500;
+    }
+    
+    #script-name-input {
+      font-size: 13px;
+      font-weight: 500;
+      border: 1px solid var(--border-color);
+      border-radius: 4px;
+      padding: 2px 6px;
+      width: 200px;
+      outline: none;
+    }
+    
+    #script-name-input:focus {
+      border-color: var(--primary-color);
+    }
+    
+    .code-actions {
+      display: flex;
+      gap: 6px;
+    }
+    
+    .code-editor {
+      flex: 1;
+      overflow: auto;
+      position: relative;
+    }
+    
+    /* CodeMirror样式覆盖 */
+    .CodeMirror {
+      height: 100%;
+      font-size: 12px;
+      font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', 'Consolas', monospace;
+      line-height: 1.4;
+      border: none;
+    }
+    
+    .tools-container {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 4px 8px;
+      background-color: var(--background-light);
+      border-top: 1px solid var(--border-color);
+      border-radius: 0 0 var(--border-radius) var(--border-radius);
+      min-height: 36px;
+    }
+    
+    .action-bar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-top: 8px;
+      background-color: var(--background-light);
+      border-radius: var(--border-radius);
+      padding: 6px 8px;
+      border: 1px solid var(--border-color);
+      box-shadow: var(--shadow-sm);
+      min-height: 42px;
+    }
+    
+    .primary-action, .secondary-btn {
+      border-radius: var(--border-radius);
+    }
+    
+    .primary-action {
+      background-color: var(--success-color);
+      color: white;
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      transition: var(--transition);
+      border: none;
+      font-weight: 500;
+      height: 28px;
+      display: flex;
+      align-items: center;
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .primary-action:hover {
+      background-color: #2d9348;
+      box-shadow: var(--shadow-md);
+      transform: translateY(-1px);
+    }
+    
+    .primary-action:active {
+      transform: translateY(0);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .primary-action:disabled {
+      background-color: var(--border-color);
+      cursor: not-allowed;
+      opacity: 0.7;
+      box-shadow: none;
+      transform: none;
+    }
+    
+    .secondary-actions {
+      display: flex;
+      gap: 6px;
+      align-items: center;
+      margin-left: auto;
+    }
+    
+    .secondary-btn {
+      background-color: var(--background-white);
+      color: var(--text-color);
+      padding: 4px 10px;
+      cursor: pointer;
+      font-size: 12px;
+      border: 1px solid var(--border-color);
+      transition: var(--transition);
+      height: 28px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .secondary-btn:hover {
+      background-color: var(--background-light);
+      border-color: var(--primary-color);
+      color: var(--primary-color);
+      transform: translateY(-1px);
+      box-shadow: var(--shadow-sm);
+    }
+    
+    .secondary-btn:active {
+      transform: translateY(0);
+    }
+    
+    .secondary-btn.danger:hover {
+      color: var(--danger-color);
+      border-color: var(--danger-color);
+    }
+    
+    .secondary-btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none;
+      box-shadow: none;
+    }
+    
+    .hidden {
+      display: none !important;
+    }
+    
+    .empty-state {
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      padding: 20px;
+      background-color: var(--background-light);
+      border-radius: var(--border-radius);
+      min-height: 200px;
+      text-align: center;
+      color: var(--secondary-text);
+      border: 1px dashed var(--border-color);
+    }
+    
+    .empty-state-icon {
+      font-size: 28px;
+      margin-bottom: 10px;
+      opacity: 0.7;
+    }
+    
+    /* Toast通知样式 */
+    #toast-container {
+      position: fixed;
+      top: 12px;
+      left: 12px;
+      transform: none;
+      z-index: 9999;
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      pointer-events: none;
+    }
+    
+    .toast {
+      max-width: 300px;
+      margin-bottom: 10px;
+      padding: 8px 16px;
+      border-radius: var(--border-radius);
+      color: white;
+      font-size: 13px;
+      box-shadow: var(--shadow-md);
+      pointer-events: none;
+      transition: transform 0.3s ease, opacity 0.3s ease;
+      transform: translateY(-10px);
+      opacity: 0;
+    }
+    
+    .toast.show {
+      opacity: 1;
+      transform: translateX(0);
+    }
+    
+    .toast-success {
+      background-color: var(--success-color);
+    }
+    
+    .toast-error {
+      background-color: var(--danger-color);
+    }
+    
+    .toast-warning {
+      background-color: var(--warning-color);
+      color: #333;
+    }
+    
+    .toast-info {
+      background-color: var(--primary-color);
+    }
+    
+    /* 开关样式 */
+    .switch {
+      position: relative;
+      display: inline-block;
+      width: 32px;
+      height: 16px;
+    }
+    
+    .switch input {
+      opacity: 0;
+      width: 0;
+      height: 0;
+    }
+    
+    .slider {
+      position: absolute;
+      cursor: pointer;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background-color: #ccc;
+      transition: .3s;
+    }
+    
+    .slider:before {
+      position: absolute;
+      content: "";
+      height: 12px;
+      width: 12px;
+      left: 2px;
+      bottom: 2px;
+      background-color: white;
+      transition: .3s;
+    }
+    
+    input:checked + .slider {
+      background-color: var(--success-color);
+    }
+    
+    input:focus + .slider {
+      box-shadow: 0 0 1px var(--success-color);
+    }
+    
+    input:checked + .slider:before {
+      transform: translateX(14px);
+    }
+    
+    .slider.round {
+      border-radius: 34px;
+    }
+    
+    .slider.round:before {
+      border-radius: 50%;
+    }
+    
+    /* 文字按钮样式 */
+    .text-button {
+      background-color: transparent;
+      color: var(--primary-color);
+      border: none;
+      padding: 2px 5px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 11px;
+      font-weight: 500;
+      transition: var(--transition);
+      height: 20px;
+      display: flex;
+      align-items: center;
+    }
+    
+    .text-button:hover {
+      background-color: rgba(66, 133, 244, 0.1);
+      transform: translateY(-1px);
+    }
+    
+    .text-button:active {
+      background-color: rgba(66, 133, 244, 0.2);
+      transform: translateY(0);
+    }
+    
+    .text-button:disabled {
+      color: var(--secondary-text);
+      cursor: not-allowed;
+      opacity: 0.5;
+      transform: none;
+    }
+    
+    .empty-message {
+      color: var(--secondary-text);
+      text-align: center;
+      padding: 20px;
+      font-size: 14px;
+      background-color: var(--background-light);
+      border-radius: var(--border-radius);
+      margin: 15px 0;
+      border: 1px dashed var(--border-color);
+    }
+    
+    .status-container {
+      padding: 8px 12px;
+      font-size: 12px;
+      background-color: var(--background-light);
+      color: var(--secondary-text);
+      border-radius: var(--border-radius);
+      margin-top: 10px;
+      border: 1px solid var(--border-color);
+    }
+    
+    /* 小型开关样式 */
+    .switch[style*="width: 26px"] .slider:before {
+      height: 10px;
+      width: 10px;
+      left: 2px;
+      bottom: 2px;
+    }
+    
+    .switch[style*="width: 26px"] input:checked + .slider:before {
+      transform: translateX(12px);
+    }
+    
+    /* 禁用状态的开关样式 */
+    .switch[data-disabled="true"] {
+      opacity: 0.5;
+      pointer-events: none;
+    }
+    
+    .switch[data-disabled="true"] .slider {
+      cursor: not-allowed;
+      background-color: #cccccc;
+    }
+  </style>
+</head>
+<body>
+  <h1>
+    <img src="images/icon48.png" alt="JS" width="22" height="22" style="margin:0 4px;vertical-align:middle;"><span data-i18n="extension_name">Inject</span>
+    <button id="lang-toggle" class="lang-toggle" title="Switch Language / 切换语言">🌐</button>
+  </h1>
+  
+  <div class="site-header">
+    <div class="site-header-row">
+      <h2 style="display: flex; align-items: center; font-size: 12px;">
+        <span data-i18n="current_site">当前网站</span>
+        <span style="margin-left: 5px; font-size: 10px; color: var(--secondary-text); font-weight: normal;" id="script-status">
+          <span class="status-indicator" style="width: 6px; height: 6px;"></span><span data-i18n="not_injected">未注入</span>
+        </span>
+      </h2>
+      <div class="action-buttons">
+        <button id="add-script" class="text-button" style="height: 18px; padding: 1px 4px;" title="为当前网站添加新脚本" data-i18n="add" data-i18n-title="add_script_title">添加</button>
+        <button id="edit-script" class="text-button" style="height: 18px; padding: 1px 4px;" title="在编辑器页面编辑" data-i18n="edit" data-i18n-title="edit_script_title">编辑</button>
+      </div>
+    </div>
+    
+    <div class="site-info">
+      <div class="domain-container" style="margin-top: 2px; height: 22px;">
+        <div id="current-domain" style="padding: 2px 8px; font-size: 11px;">加载中...</div>
+      </div>
+      
+      <div class="status-row" style="margin-top: 2px;">
+        <span class="toggle-label" data-i18n="enable_script_injection">启用脚本注入</span>
+        <label class="switch" style="width: 26px; height: 14px;">
+          <input type="checkbox" id="toggle-injection">
+          <span class="slider round" style="line-height: 0;"></span>
+        </label>
+      </div>
+    </div>
+  </div>
+  
+  <div id="code-container" class="code-container hidden">
+    <div class="code-header">
+      <div class="code-title-container">
+        <input type="text" id="script-name-input" class="hidden" placeholder="输入脚本名称" data-i18n-placeholder="enter_script_name">
+        <div class="code-title" id="code-title" data-i18n="script_content">脚本内容</div>
+        <button id="edit-name" class="icon-button small-icon" title="编辑脚本名称" data-i18n-title="edit_script_name">
+          <span>✏️</span>
+        </button>
+      </div>
+      <div class="code-actions">
+        <button id="toggle-edit" class="icon-button small-icon" title="切换编辑模式" data-i18n-title="toggle_edit_mode">
+          <span style="font-size: 14px;">✎</span>
+        </button>
+      </div>
+    </div>
+    <div class="code-editor" id="code-editor">
+      <!-- CodeMirror将在这里初始化 -->
+    </div>
+    <div id="empty-state" class="empty-state">
+      <div class="empty-state-icon">📝</div>
+      <div style="color: var(--text-color); font-weight: 500; margin-bottom: 5px;" data-i18n="no_script_for_site">当前网站没有注入脚本</div>
+      <div style="margin-bottom: 20px;" data-i18n="click_to_add">点击右上角 + 按钮添加</div>
+      <button id="create-script" class="primary-action">
+        <span style="display: flex; align-items: center; gap: 3px;">
+          <span style="font-size: 13px;">+</span><span data-i18n="create_new_script">创建新脚本</span>
+        </span>
+      </button>
+    </div>
+    <div class="tools-container">
+      <span id="code-status" style="font-size: 12px; color: var(--secondary-text);" data-i18n="read_only_mode">只读模式</span>
+      <div style="flex-grow: 1"></div>
+      <button id="refresh-page" class="secondary-btn" title="刷新当前页面预览效果" data-i18n-title="refresh_page_preview">
+        <span style="display: flex; align-items: center; gap: 3px;">
+          <span style="font-size: 13px;">↻</span><span data-i18n="refresh">刷新</span>
+        </span>
+      </button>
+    </div>
+  </div>
+  
+  <div id="ad-container-popup" style="text-align: center; margin-top: 8px; margin-bottom: 8px; border: 1px dashed #ccc; padding: 5px; min-height: 50px; background-color: #f0f0f0;">
+    <!-- TODO: Replace with your actual ad code -->
+    <span style="font-size: 12px; color: #555;">Advertisement Area</span>
+    <p style="font-size: 10px; color: #777; margin-top: 4px;">Your Ad Here - (e.g., 300x50 banner)</p>
+  </div>
+
+  <div class="action-bar">
+    <button id="save-script" class="primary-action hidden">
+      <span style="display: flex; align-items: center; gap: 3px;">
+        <span style="font-size: 13px;">✓</span><span data-i18n="save">保存</span>
+      </span>
+    </button>
+    <div class="secondary-actions">
+      <button id="manage-scripts" class="secondary-btn" data-i18n="manage_scripts">脚本管理</button>
+      <button id="options" class="secondary-btn" data-i18n="options">选项</button>
+      <button id="toggle-theme" class="icon-button" title="切换暗黑模式" data-i18n-title="toggle_dark_mode">
+        <span>🌓</span>
+      </button>
+    </div>
+  </div>
+
+  <!-- Toast通知容器 -->
+  <div id="toast-container"></div>
+  
+  <script type="module" src="popup.js"></script>
+</body>
+</html> 
